@@ -46,7 +46,7 @@ func RunTests[S any, SP interface {
 				case 1:
 					res = solver.Part2()
 				}
-				assert.Equal(t, sol, res, "Input %s, part %d", test.input_file, i)
+				assert.Equal(t, sol, res, "Input %s, part %d", test.input_file, i+1)
 			}
 		}
 	}
