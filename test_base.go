@@ -9,21 +9,21 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-type TestCase struct {
+type TestCase[O any] struct {
 	input_file string
-	solutions  [2]int
+	solutions  [2]O
 }
 
-type Solver interface {
+type Solver[O any] interface {
 	Process(string)
-	Part1() int
-	Part2() int
+	Part1() O
+	Part2() O
 }
 
-func RunTests[S any, SP interface {
+func RunTests[S any, O comparable, SP interface {
 	*S
-	Solver
-}](t *testing.T, cases []TestCase) {
+	Solver[O]
+}](t *testing.T, cases []TestCase[O]) {
 	for _, test := range cases {
 		input, err := os.ReadFile("data/" + test.input_file)
 		if err != nil {
@@ -38,8 +38,9 @@ func RunTests[S any, SP interface {
 		solver := SP(&inner)
 		solver.Process(string(input))
 		for i, sol := range test.solutions {
-			if sol != 0 {
-				var res int
+			var skip O
+			if sol != skip {
+				var res O
 				switch i {
 				case 0:
 					res = solver.Part1()

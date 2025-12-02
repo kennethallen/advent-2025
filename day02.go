@@ -10,20 +10,20 @@ import (
 )
 
 type Day02 struct {
-	invalid_pairs_sum int
-	invalid_all_sum   int
-	seen              mapset.Set[int]
+	invalid_pairs_sum uint64
+	invalid_all_sum   uint64
+	seen              mapset.Set[uint64]
 }
 
 func (sol *Day02) Process(input string) {
-	sol.seen = mapset.NewThreadUnsafeSet[int]()
+	sol.seen = mapset.NewThreadUnsafeSet[uint64]()
 	for line := range strings.SplitSeq(strings.TrimSuffix(input, "\n"), ",") {
 		extrema := strings.Split(line, "-")
-		start, err := strconv.Atoi(extrema[0])
+		start, err := strconv.ParseUint(extrema[0], 10, 64)
 		if err != nil {
 			log.Fatal(err)
 		}
-		end, err := strconv.Atoi(extrema[1])
+		end, err := strconv.ParseUint(extrema[1], 10, 64)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -31,14 +31,14 @@ func (sol *Day02) Process(input string) {
 		pairs_sum := sol.process_reps(start, end, 2)
 		sol.invalid_pairs_sum += pairs_sum
 		sol.invalid_all_sum += pairs_sum
-		// int64 up to 19 digits long
-		for _, reps := range []int{3, 5, 7, 11, 13, 17, 19} {
+		// uint64 up to 20 digits long
+		for _, reps := range []uint64{3, 5, 7, 11, 13, 17, 19} {
 			sol.invalid_all_sum += sol.process_reps(start, end, reps)
 		}
 	}
 }
 
-func (sol *Day02) process_reps(start int, end int, reps int) int {
+func (sol *Day02) process_reps(start uint64, end uint64, reps uint64) uint64 {
 	/*
 		For each power of ten n, invalid codes are (n + 1)x where x is in [n/10, n-1]
 		[1     , 99     ]: 11   n, n in [1  , 9  ]
@@ -54,8 +54,7 @@ func (sol *Day02) process_reps(start int, end int, reps int) int {
 		Should sum invalid values in blocks at least instead of one by one ((n^2 + n)/2 etc.).
 		Should look for better solution to duplicates than `seen` set.
 	*/
-	accum := 0
-	ten_power := 10
+	var accum, ten_power uint64 = 0, 10
 	one_past_max_invalid := pow(ten_power, reps)
 	if one_past_max_invalid == 0 {
 		return 0
@@ -92,36 +91,34 @@ func (sol *Day02) process_reps(start int, end int, reps int) int {
 	return accum
 }
 
-func pow(base int, exp int) int {
-	res := 1
+func pow(base uint64, exp uint64) uint64 {
+	var res uint64 = 1
 	for range exp {
-		new_res, err := overflow.MulInt64(int64(res), int64(base))
+		var err bool
+		res, err = overflow.MulUint64(res, base)
 		if err {
 			return 0
 		}
-		res = int(new_res)
 	}
 	return res
 }
 
-func calc_mult(ten_power int, reps int) int {
-	mult := 0
-	ten_power_power := 1
+func calc_mult(ten_power uint64, reps uint64) uint64 {
+	var mult, ten_power_power uint64 = 0, 1
 	for range reps {
-		new_mult, err := overflow.AddInt64(int64(mult), int64(ten_power_power))
+		var err bool
+		mult, err = overflow.AddUint64(mult, ten_power_power)
 		if err {
 			return 0
 		}
-		mult = int(new_mult)
 
-		new_ten_power_power, err := overflow.MulInt64(int64(ten_power_power), int64(ten_power))
+		ten_power_power, err = overflow.MulUint64(ten_power_power, ten_power)
 		if err {
 			return 0
 		}
-		ten_power_power = int(new_ten_power_power)
 	}
 	return mult
 }
 
-func (sol *Day02) Part1() int { return sol.invalid_pairs_sum }
-func (sol *Day02) Part2() int { return sol.invalid_all_sum }
+func (sol *Day02) Part1() uint64 { return sol.invalid_pairs_sum }
+func (sol *Day02) Part2() uint64 { return sol.invalid_all_sum }
