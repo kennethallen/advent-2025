@@ -1,59 +1,69 @@
 package advent_2025
 
 import (
-	"log"
-	"strconv"
 	"strings"
 )
 
 type Day06 struct {
-	grand_total uint64
+	grand_total_ltr uint64
+	grand_total_ttb uint64
 }
 
 func (sol *Day06) Process(input string) {
 	lines := strings.Split(strings.TrimSuffix(input, "\n"), "\n")
+	op_lines := lines[:len(lines)-1]
 	ops := lines[len(lines)-1]
-	operands := make([]uint64, 0, len(lines)-1)
-	for i := 0; i < len(ops); {
-		end := i + 1
-		for ; end < len(ops); end++ {
-			if ops[end] != ' ' {
-				end--
+	ltr_operands := make([]uint64, len(op_lines))
+	is_mult := false
+	var ttb_prod uint64
+	for i := 0; ; i++ {
+		if i >= len(ops) || ops[i] != ' ' {
+			// Finish op
+			if is_mult {
+				sol.grand_total_ttb += ttb_prod
+				var ltr_prod uint64 = 1
+				for _, ltr_operand := range ltr_operands {
+					ltr_prod *= ltr_operand
+				}
+				sol.grand_total_ltr += ltr_prod
+			} else {
+				for _, ltr_operand := range ltr_operands {
+					sol.grand_total_ltr += ltr_operand
+				}
+			}
+
+			if i >= len(ops) {
 				break
 			}
-		}
-		for _, line := range lines[:len(lines)-1] {
-			operand, err := strconv.ParseUint(strings.Trim(line[i:end], " "), 10, 64)
-			if err != nil {
-				log.Fatal(err)
+
+			// Reset
+			is_mult = ops[i] == '*'
+			ttb_prod = 1
+			for n := range ltr_operands {
+				ltr_operands[n] = 0
 			}
-			operands = append(operands, operand)
 		}
-		sol.grand_total += eval(ops[i], operands)
 
-		i = end + 1
-		operands = operands[:0]
+		var ttb_operand uint64
+		any_digit := false
+		for n, op_line := range op_lines {
+			if op_line[i] == ' ' {
+				continue
+			}
+			any_digit = true
+			digit := uint64(op_line[i] - '0')
+			ltr_operands[n] = 10*ltr_operands[n] + digit
+			ttb_operand = 10*ttb_operand + digit
+		}
+		if any_digit {
+			if is_mult {
+				ttb_prod *= ttb_operand
+			} else {
+				sol.grand_total_ttb += ttb_operand
+			}
+		}
 	}
 }
 
-func eval(op byte, operands []uint64) uint64 {
-	switch op {
-	case '+':
-		var sum uint64
-		for _, operand := range operands {
-			sum += operand
-		}
-		return sum
-	case '*':
-		var prod uint64 = 1
-		for _, operand := range operands {
-			prod *= operand
-		}
-		return prod
-	default:
-		panic("Unknown op")
-	}
-}
-
-func (sol *Day06) Part1() uint64 { return sol.grand_total }
-func (sol *Day06) Part2() uint64 { return 0 }
+func (sol *Day06) Part1() uint64 { return sol.grand_total_ltr }
+func (sol *Day06) Part2() uint64 { return sol.grand_total_ttb }
