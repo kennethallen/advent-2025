@@ -38,7 +38,7 @@ func (sol *Day02) Process(input string) {
 	}
 }
 
-func (sol *Day02) process_reps(start uint64, end uint64, reps uint64) uint64 {
+func (sol *Day02) process_reps(start, end, reps uint64) uint64 {
 	/*
 		For each power of ten n, invalid codes are (n + 1)x where x is in [n/10, n-1]
 		[1     , 99     ]: 11   n, n in [1  , 9  ]
@@ -91,7 +91,7 @@ func (sol *Day02) process_reps(start uint64, end uint64, reps uint64) uint64 {
 	return accum
 }
 
-func pow(base uint64, exp uint64) uint64 {
+func pow(base, exp uint64) uint64 {
 	var res uint64 = 1
 	for range exp {
 		var err bool
@@ -103,7 +103,7 @@ func pow(base uint64, exp uint64) uint64 {
 	return res
 }
 
-func calc_mult(ten_power uint64, reps uint64) uint64 {
+func calc_mult(ten_power, reps uint64) uint64 {
 	var mult, ten_power_power uint64 = 0, 1
 	for range reps {
 		var err bool

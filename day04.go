@@ -50,7 +50,7 @@ func (sol *Day04) Part2() uint {
 	}
 }
 
-func (sol *Day04) accessible_paper(y int, x int) bool {
+func (sol *Day04) accessible_paper(y, x int) bool {
 	if !sol.grid[y][x] {
 		return false
 	}
