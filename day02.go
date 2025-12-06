@@ -78,7 +78,7 @@ func (sol *Day02) process_reps(start uint64, end uint64, reps uint64) uint64 {
 			accum += invalid
 		}
 
-		x += 1
+		x++
 		if x == ten_power {
 			ten_power *= 10
 			mult = calc_mult(ten_power, reps)

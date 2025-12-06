@@ -22,12 +22,12 @@ func (sol *Day01) Process(input string) {
 		switch line[:1] {
 		case "L":
 			if dial > 0 && dial-val <= 0 {
-				sol.zero_passes += 1
+				sol.zero_passes++
 			}
 			dial -= val
 		case "R":
 			if dial < 0 && dial+val >= 0 {
-				sol.zero_passes += 1
+				sol.zero_passes++
 			}
 			dial += val
 		}
@@ -38,7 +38,7 @@ func (sol *Day01) Process(input string) {
 		sol.zero_passes += passes
 		dial %= 100
 		if dial == 0 {
-			sol.zero_stops += 1
+			sol.zero_stops++
 		}
 	}
 }
