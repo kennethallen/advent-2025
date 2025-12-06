@@ -9,7 +9,6 @@ type Day04 struct {
 }
 
 func (sol *Day04) Process(input string) {
-	sol.grid = make([][]bool, 0)
 	for line := range strings.SplitSeq(strings.TrimSuffix(input, "\n"), "\n") {
 		row := make([]bool, 0, len(line))
 		for _, char := range line {

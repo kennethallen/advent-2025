@@ -13,8 +13,6 @@ type Day05 struct {
 }
 
 func (sol *Day05) Process(input string) {
-	sol.ranges = make([][2]uint64, 0)
-	sol.ids = make([]uint64, 0)
 	past_ranges := false
 	for line := range strings.SplitSeq(input, "\n") {
 		if len(line) == 0 {
@@ -59,7 +57,6 @@ func (sol *Day05) Part2() uint64 {
 		total -= max(cursor, fresh_range[0])
 		cursor = max(cursor, fresh_range[1]+1)
 		total += cursor
-		log.Println(total, fresh_range)
 	}
 	return total
 }
