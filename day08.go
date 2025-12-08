@@ -6,8 +6,6 @@ import (
 	"slices"
 	"strconv"
 	"strings"
-
-	mapset "github.com/deckarep/golang-set/v2"
 )
 
 type Day08 struct {
@@ -122,19 +120,7 @@ func (sol *Day08) Process(input string) {
 			break
 		}
 	}
-
 }
 
 func (sol *Day08) Part1() uint64 { return sol.prod_of_sizes_of_three_largest_circuits_after_benchmark }
 func (sol *Day08) Part2() uint64 { return sol.prod_of_x_coordinates_of_last_two_junctions_to_connect }
-
-func compare_junction_sets(a, b mapset.Set[JunctionId]) int {
-	var a_card, b_card int
-	if a != nil {
-		a_card = a.Cardinality()
-	}
-	if b != nil {
-		b_card = b.Cardinality()
-	}
-	return a_card - b_card
-}
