@@ -18,6 +18,11 @@ type Day08 struct {
 type JunctionId int
 type CircuitId int
 
+type Slot struct {
+	junction Junction
+	circuit  []JunctionId
+}
+
 type Junction struct {
 	coord      [3]uint64
 	circuit_id CircuitId
@@ -41,7 +46,7 @@ func (pairs *JunctionPairHeap) Pop() any {
 }
 
 func (sol *Day08) Process(input string) {
-	var junctions []Junction
+	var slots []Slot
 	for line := range strings.SplitSeq(strings.TrimSuffix(input, "\n"), "\n") {
 		coords := strings.Split(line, ",")
 		x, err := strconv.ParseUint(coords[0], 10, 64)
@@ -56,96 +61,65 @@ func (sol *Day08) Process(input string) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		junctions = append(junctions, Junction{coord: [3]uint64{x, y, z}})
+		slots = append(slots, Slot{
+			junction: Junction{
+				coord:      [3]uint64{x, y, z},
+				circuit_id: CircuitId(len(slots)),
+			},
+			circuit: []JunctionId{JunctionId(len(slots))},
+		})
 	}
 
-	pairs := JunctionPairHeap(make([]JunctionPair, 0, (len(junctions)*len(junctions)-len(junctions))/2))
-	for i, junc_i := range junctions {
-		for j := i + 1; j < len(junctions); j++ {
-			junc_j := junctions[j]
+	pairs := JunctionPairHeap(make([]JunctionPair, 0, (len(slots)*len(slots)-len(slots))/2))
+	for i, slot_i := range slots {
+		junc_i := slot_i.junction
+		for j := i + 1; j < len(slots); j++ {
+			junc_j := slots[j].junction
 			dx := junc_i.coord[0] - junc_j.coord[0]
 			dy := junc_i.coord[1] - junc_j.coord[1]
 			dz := junc_i.coord[2] - junc_j.coord[2]
-			pairs = append(pairs, JunctionPair{junctions: [2]JunctionId{JunctionId(i), JunctionId(j)}, dist_sq: dx*dx + dy*dy + dz*dz})
+			pairs = append(pairs, JunctionPair{
+				junctions: [2]JunctionId{JunctionId(i), JunctionId(j)},
+				dist_sq:   dx*dx + dy*dy + dz*dz,
+			})
 		}
 	}
 	heap.Init(&pairs)
-	var circuits []mapset.Set[JunctionId]
+	circuits := len(slots)
 	for n := 0; ; n++ {
-		if len(junctions) == 20 && n == 10 || len(junctions) != 20 && n == 1_000 {
-			circuits_clone := slices.Clone(circuits)
-			slices.SortFunc(circuits_clone, compare_junction_sets)
+		if len(slots) == 20 && n == 10 || len(slots) != 20 && n == 1_000 { // Example vs real
+			circuit_sizes := make([]int, 0, len(slots))
+			for _, slot := range slots {
+				circuit_sizes = append(circuit_sizes, len(slot.circuit))
+			}
+			slices.Sort(circuit_sizes)
 			sol.prod_of_sizes_of_three_largest_circuits_after_benchmark = 1
-			for _, circuit := range circuits_clone[len(circuits_clone)-3:] {
-				sol.prod_of_sizes_of_three_largest_circuits_after_benchmark *= uint64(circuit.Cardinality())
+			for _, circuit_size := range circuit_sizes[len(circuit_sizes)-3:] {
+				sol.prod_of_sizes_of_three_largest_circuits_after_benchmark *= uint64(circuit_size)
 			}
 		}
 
 		closest_pair := heap.Pop(&pairs).(JunctionPair)
-		if junctions[closest_pair.junctions[0]].circuit_id == 0 { // First is not in a circuit
-			if junctions[closest_pair.junctions[1]].circuit_id == 0 { // Nor is second
-				// New circuit!
-				new_circuit_id := len(circuits) + 1
-				log.Printf("New circuit %v for junctions %v", new_circuit_id, closest_pair.junctions)
-				for i := range closest_pair.junctions {
-					junctions[closest_pair.junctions[i]].circuit_id = CircuitId(new_circuit_id)
-				}
-				circuits = append(circuits, mapset.NewThreadUnsafeSet(closest_pair.junctions[:]...))
-			} else { // Second is
-				// First joins second's circuit
-				circuit_id := junctions[closest_pair.junctions[1]].circuit_id
-				log.Printf("First %v joining circuit %v", closest_pair.junctions[0], circuit_id)
-				junctions[closest_pair.junctions[0]].circuit_id = circuit_id
-				circuits[circuit_id-1].Add(closest_pair.junctions[0])
-			}
-		} else { // First is in a circuit
-			circuit_id := junctions[closest_pair.junctions[0]].circuit_id
-			if junctions[closest_pair.junctions[1]].circuit_id == 0 { // Second isn't
-				// Second joins first's circuit
-				log.Printf("Second %v joining circuit %v", closest_pair.junctions[1], circuit_id)
-				junctions[closest_pair.junctions[1]].circuit_id = circuit_id
-				circuits[circuit_id-1].Add(closest_pair.junctions[1])
-			} else if loser := junctions[closest_pair.junctions[1]].circuit_id; circuit_id != loser { // Second is
-				// Merging circuits
-				log.Printf("Merging members of circuit %v into %v", loser, circuit_id)
-				for junction_id := range circuits[loser-1].Iter() {
-					junctions[junction_id].circuit_id = circuit_id
-					circuits[circuit_id-1].Add(junction_id)
-				}
-				circuits[loser-1] = nil
-			}
+		j0 := closest_pair.junctions[0]
+		j0_circ := slots[j0].junction.circuit_id
+		j1 := closest_pair.junctions[1]
+		j1_circ := slots[j1].junction.circuit_id
+		if j0_circ == j1_circ { // Already connected
+			continue
 		}
-		if circuits[junctions[closest_pair.junctions[0]].circuit_id-1].Cardinality() == len(junctions) {
-			sol.prod_of_x_coordinates_of_last_two_junctions_to_connect = 1
-			for _, junction_id := range closest_pair.junctions {
-				sol.prod_of_x_coordinates_of_last_two_junctions_to_connect *= junctions[junction_id].coord[0]
-			}
-			break
+		if len(slots[j0_circ].circuit) < len(slots[j1_circ].circuit) { // Merge into larger
+			j0_circ, j1_circ = j1_circ, j0_circ
 		}
+		slots[j0_circ].circuit = append(slots[j0_circ].circuit, slots[j1_circ].circuit...)
+		for _, j := range slots[j1_circ].circuit {
+			slots[j].junction.circuit_id = j0_circ
+		}
+		slots[j1_circ].circuit = nil
 
-		// Check invariants
-		for junction_id, junction := range junctions {
-			if junction.circuit_id != 0 {
-				if circuits[junction.circuit_id-1] == nil {
-					log.Fatalf("Junction %v circuit %v nil", junction_id, junction.circuit_id)
-				}
-				if !circuits[junction.circuit_id-1].ContainsOne(JunctionId(junction_id)) {
-					log.Fatalf("Junction %v not in circuit %v", junction_id, junction.circuit_id)
-				}
-			}
-		}
-		for circuit_id_minus_one, circuit := range circuits {
-			if circuit == nil {
-				continue
-			}
-			if circuit.Cardinality() == 0 {
-				log.Fatalf("Circuit %v empty", circuit_id_minus_one+1)
-			}
-			for junction_id := range circuit.Iter() {
-				if junctions[junction_id].circuit_id != CircuitId(circuit_id_minus_one+1) {
-					log.Fatalf("Circuit %v not set on member %v", circuit_id_minus_one+1, junction_id)
-				}
-			}
+		circuits--
+		if circuits == 1 {
+			sol.prod_of_x_coordinates_of_last_two_junctions_to_connect = slots[j0].junction.coord[0] * slots[j1].junction.coord[0]
+			break
 		}
 	}
 
