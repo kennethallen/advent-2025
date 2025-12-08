@@ -11,7 +11,8 @@ import (
 )
 
 type Day08 struct {
-	prod_of_sizes_of_three_largest_circuits uint64
+	prod_of_sizes_of_three_largest_circuits_after_benchmark uint64
+	prod_of_x_coordinates_of_last_two_junctions_to_connect  uint64
 }
 
 type JunctionId int
@@ -70,11 +71,16 @@ func (sol *Day08) Process(input string) {
 	}
 	heap.Init(&pairs)
 	var circuits []mapset.Set[JunctionId]
-	pairs_to_link := 1_000
-	if len(junctions) == 20 {
-		pairs_to_link = 10
-	}
-	for range pairs_to_link {
+	for n := 0; ; n++ {
+		if len(junctions) == 20 && n == 10 || len(junctions) != 20 && n == 1_000 {
+			circuits_clone := slices.Clone(circuits)
+			slices.SortFunc(circuits_clone, compare_junction_sets)
+			sol.prod_of_sizes_of_three_largest_circuits_after_benchmark = 1
+			for _, circuit := range circuits_clone[len(circuits_clone)-3:] {
+				sol.prod_of_sizes_of_three_largest_circuits_after_benchmark *= uint64(circuit.Cardinality())
+			}
+		}
+
 		closest_pair := heap.Pop(&pairs).(JunctionPair)
 		if junctions[closest_pair.junctions[0]].circuit_id == 0 { // First is not in a circuit
 			if junctions[closest_pair.junctions[1]].circuit_id == 0 { // Nor is second
@@ -109,6 +115,13 @@ func (sol *Day08) Process(input string) {
 				circuits[loser-1] = nil
 			}
 		}
+		if circuits[junctions[closest_pair.junctions[0]].circuit_id-1].Cardinality() == len(junctions) {
+			sol.prod_of_x_coordinates_of_last_two_junctions_to_connect = 1
+			for _, junction_id := range closest_pair.junctions {
+				sol.prod_of_x_coordinates_of_last_two_junctions_to_connect *= junctions[junction_id].coord[0]
+			}
+			break
+		}
 
 		// Check invariants
 		for junction_id, junction := range junctions {
@@ -136,19 +149,18 @@ func (sol *Day08) Process(input string) {
 		}
 	}
 
-	slices.SortFunc(circuits, func(a, b mapset.Set[JunctionId]) int {
-		var a_card, b_card int
-		if a != nil {
-			a_card = a.Cardinality()
-		}
-		if b != nil {
-			b_card = b.Cardinality()
-		}
-		return a_card - b_card
-	})
-	log.Println(circuits)
-	sol.prod_of_sizes_of_three_largest_circuits = uint64(circuits[len(circuits)-1].Cardinality()) * uint64(circuits[len(circuits)-3].Cardinality()) * uint64(circuits[len(circuits)-2].Cardinality())
 }
 
-func (sol *Day08) Part1() uint64 { return sol.prod_of_sizes_of_three_largest_circuits }
-func (sol *Day08) Part2() uint64 { return 0 }
+func (sol *Day08) Part1() uint64 { return sol.prod_of_sizes_of_three_largest_circuits_after_benchmark }
+func (sol *Day08) Part2() uint64 { return sol.prod_of_x_coordinates_of_last_two_junctions_to_connect }
+
+func compare_junction_sets(a, b mapset.Set[JunctionId]) int {
+	var a_card, b_card int
+	if a != nil {
+		a_card = a.Cardinality()
+	}
+	if b != nil {
+		b_card = b.Cardinality()
+	}
+	return a_card - b_card
+}
