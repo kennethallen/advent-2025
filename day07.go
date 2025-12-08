@@ -100,34 +100,38 @@ func (sol *Day07) Part2() uint {
 	part2 := Day07Part2{base: sol, cache: make(map[[2]uint64]uint)}
 	var universes uint
 	for _, start := range sol.starts {
-		universes += part2.recurse(0, start)
+		universes += part2.recurse_cached(0, start)
 	}
 	return universes
 }
 
-func (sol *Day07Part2) recurse(depth, pos uint64) uint {
+func (sol *Day07Part2) recurse_cached(depth, pos uint64) uint {
 	key := [2]uint64{depth, pos}
 	val, cached := sol.cache[key]
 	if !cached {
-		if depth >= uint64(len(sol.base.rows)) {
-			val = 1
-		} else {
-			splitter, err := sol.base.rows[depth].Get(pos)
-			if err != nil {
-				log.Fatal(err)
-			}
-			if splitter {
-				if pos > 0 {
-					val = sol.recurse(depth+1, pos-1)
-				}
-				if pos+1 < uint64(len(sol.base.rows)) {
-					val += sol.recurse(depth+1, pos+1)
-				}
-			} else {
-				val = sol.recurse(depth+1, pos)
-			}
-		}
+		val = sol.recurse(depth, pos)
 		sol.cache[key] = val
+	}
+	return val
+}
+
+func (sol *Day07Part2) recurse(depth, pos uint64) uint {
+	if depth >= uint64(len(sol.base.rows)) {
+		return 1
+	}
+	splitter, err := sol.base.rows[depth].Get(pos)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if !splitter {
+		return sol.recurse_cached(depth+1, pos)
+	}
+	var val uint
+	if pos > 0 {
+		val = sol.recurse_cached(depth+1, pos-1)
+	}
+	if pos+1 < uint64(len(sol.base.rows)) {
+		val += sol.recurse_cached(depth+1, pos+1)
 	}
 	return val
 }
