@@ -1,5 +1,7 @@
 github.com/LukaGiorgadze/gonull/v2 v2.1.0 h1:Q/VzyEYtRyW3R1GKagfdrBbZuTNDv2uibOCczA/VVS8=
 github.com/LukaGiorgadze/gonull/v2 v2.1.0/go.mod h1:EDdsrB3GGauPQ7EN34y61ZwtDajd+osK92Wn+97JlAk=
+github.com/alecthomas/participle/v2 v2.1.4 h1:W/H79S8Sat/krZ3el6sQMvMaahJ+XcM9WSI2naI7w2U=
+github.com/alecthomas/participle/v2 v2.1.4/go.mod h1:8tqVbpTX20Ru4NfYQgZf4mP18eXPTBViyMWiArNEgGI=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/deckarep/golang-set/v2 v2.8.0 h1:swm0rlPCmdWn9mESxKOjWk8hXSqoxOp+ZlfuyaAdFlQ=
