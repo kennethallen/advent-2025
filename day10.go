@@ -3,13 +3,14 @@ package advent_2025
 import (
 	"errors"
 	"log"
+	"slices"
 	"strings"
 
 	"github.com/alecthomas/participle/v2"
 )
 
 type Day10 struct {
-	min_presses uint64
+	asts []MachineParse
 }
 
 type MachineParse struct {
@@ -45,7 +46,47 @@ func (sol *Day10) Process(input string) {
 		if err != nil {
 			log.Fatal(err)
 		}
+		sol.asts = append(sol.asts, *ast)
+	}
+}
 
+func recurse(target, state uint64, remaining_presses int, buttons []uint64) bool {
+	if remaining_presses == 0 {
+		return target == state
+	}
+	if remaining_presses > len(buttons) || len(buttons) == 0 {
+		return false
+	}
+	return recurse(target, state^buttons[0], remaining_presses-1, buttons[1:]) ||
+		recurse(target, state, remaining_presses, buttons[1:])
+}
+
+func recurse_p2(target, state []int, remaining_presses int, buttons []Button) bool {
+	//log.Printf("%v %v %v %v", buttons, target, state, remaining_presses)
+	if remaining_presses == 0 {
+		return slices.Equal(target, state)
+	}
+	if len(buttons) == 0 {
+		return false
+	}
+	new_state := slices.Clone(state)
+	for i := remaining_presses; i >= 0; i-- {
+		for _, j := range buttons[0].LightsToggled {
+			new_state[j] = state[j] + i
+		}
+		if recurse_p2(target, new_state, remaining_presses-i, buttons[1:]) {
+			return true
+		}
+	}
+	return false
+}
+
+func (sol *Day10) Part1() int {
+	total := 0
+	for _, ast := range sol.asts {
+		if len(ast.Lights) > 64 {
+			log.Fatal("too many lights for a u64")
+		}
 		var target uint64
 		for i, on := range ast.Lights {
 			if on {
@@ -62,23 +103,24 @@ func (sol *Day10) Process(input string) {
 			buttons = append(buttons, button)
 		}
 
-		var min_presses uint64
+		min_presses := 0
 		for ; !recurse(target, 0, min_presses, buttons); min_presses++ {
 		}
-		sol.min_presses += min_presses
+		total += min_presses
 	}
+	return total
 }
-
-func recurse(target, state, remaining_presses uint64, buttons []uint64) bool {
-	if target == state && remaining_presses == 0 {
-		return true
+func (sol *Day10) Part2() int {
+	total := 0
+	for _, ast := range sol.asts {
+		//log.Println(line)
+		min_presses := slices.Max(ast.Joltages)
+		slices.SortFunc(ast.Buttons, func(a, b Button) int { return len(b.LightsToggled) - len(a.LightsToggled) })
+		for ; !recurse_p2(ast.Joltages, make([]int, len(ast.Joltages)), min_presses, ast.Buttons); min_presses++ {
+			//log.Println(min_presses)
+		}
+		//log.Println(min_presses)
+		total += min_presses
 	}
-	if remaining_presses > uint64(len(buttons)) || len(buttons) == 0 {
-		return false
-	}
-	return recurse(target, state^buttons[0], remaining_presses-1, buttons[1:]) ||
-		recurse(target, state, remaining_presses, buttons[1:])
+	return total
 }
-
-func (sol *Day10) Part1() uint64 { return sol.min_presses }
-func (sol *Day10) Part2() uint64 { return 0 }
